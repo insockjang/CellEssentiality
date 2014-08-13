@@ -80,7 +80,7 @@ plot(Vstem.seed2,  show = list(Universe = FALSE))
 dev.off()
 
 
-##########################
+########################## This part should be carefully run in belltown, otherwise you might run this part in your  local machine(WARNING!!! Cytoscape should be running backend in order to generate cytoscape plot)
 require(graph)
 myMat<-MAT
 # define hit.name
