@@ -1,7 +1,7 @@
 # This should be working in your local machine otherwise you have to open cytoscape in your server, then it will be okay to run
-load("~/Synthetic_Lethality_Prediction/OV/NetProp_CGH_MUT.Rdata")
+load("/home/ijang/Synthetic_Lethality_Prediction/OV/NetProp_CGH_MUT.Rdata")
 # 
-load("~/NetworkAnalysis_RandomWalk/STRING/AdjMat_90percent.Rdata")
+load("/home/ijang/NetworkAnalysis_RandomWalk/STRING/AdjMat_90percent.Rdata")
 
 CUTOFF = 0.0005
 gene.apair.CGH<-names(which(Test[,1]>=CUTOFF))
@@ -177,6 +177,29 @@ hid1<-hid
 hid1[which(hid1!=0)]<-1
 g<-as(hid1,"graphNEL")
 gg<-igraph.from.graphNEL(g) 
-shortest.paths(gg)
+pathMat <- shortest.paths(gg)
 
+
+##Ted's code here
+##Use reshape to find pairs in pathMat
+library(reshape2)
+##subset reachability matrix
+mutPairs <- pathMat[color.red,c(color.orange,color.gold)]
+##melt reachability matrix
+mutPairsMelt<- melt(mutPairs)
+##remove those pairs that are unreachable (infinite)
+mutPairsMelt<- mutPairsMelt[!is.infinite(mutPairsMelt$value),]
+dim(mutPairsMelt)
+
+mutPairsMelt <- mutPairsMelt[duplicated(mutPairsMelt),]
+mutPairsMelt$Var1 <- as.character(mutPairsMelt$Var1)
+dim(mutPairsMelt)
+mutPairsList <- by(mutPairsMelt,mutPairsMelt$Var1,function(x){return(x)})
+
+maxMutPairs <- NULL
+for(mut in mutPairsList){
+  maxMutPairs <- rbind(maxMutPairs, mut[which.max(mut$value),])
+}
+
+save(hid1,g,gg,pathMat, maxMutPairs,file="network-analysis-ovarian.Rdata")
 ### do further to find P2's synthetic lethality candidate pairs' subset 
