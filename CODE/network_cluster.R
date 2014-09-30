@@ -177,6 +177,13 @@ hid1<-hid
 hid1[which(hid1!=0)]<-1
 g<-as(hid1,"graphNEL")
 gg<-igraph.from.graphNEL(g) 
-shortest.paths(gg)
+K<-shortest.paths(gg)
+K[seed.anotherpair.MUT,]
+# row: seed MUT vs. col: apair(candidate)
+I<-apply(K,1,function(x){length(which(x==Inf))})
+i<-which(I>=390)
+KK<-K[-i,-i]
+h<-heatmap(KK,symm=T)
 
+KKK<-KK[h$rowInd,h$rowInd]
 ### do further to find P2's synthetic lethality candidate pairs' subset 
