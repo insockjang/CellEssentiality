@@ -85,12 +85,21 @@ cc.loss<-mclapply(1:nrow(data.input.copy.interest),function(x){tmpFunLoss(x)},mc
 S.gain<-c()
 S.loss<-c()
 for(k in 1:nrow(data.input.copy.interest)){
-  if(!is.na(cc.gain[[k]])){
+  D<-data.input.copy.interest[k,]
+  d0<-which(D<=1 & D>=-1)
+  d1<-which(D> 1)
+  if(length(d0)>5 & length(d1)>5){
     S.gain<-c(S.gain,k)
   }
-  if(!is.na(cc.loss[[k]])){
+  
+  
+  d0<-which(D<=1 & D>=-1)
+  d2<-which(D< -1)
+  
+  if(length(d0)>5 & length(d2)>5){
     S.loss<-c(S.loss,k)
   }
+  
 }
 
 name.apair.gain<-rownames(data.input.copy.interest)[S.gain]
