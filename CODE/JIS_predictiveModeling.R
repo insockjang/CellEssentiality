@@ -97,9 +97,11 @@ VCV_Func_ridge<-function(x){
   return(bsModel)  
 }
 
-tmp.ridge<-mclapply(1:nrow(final.CV.ProjA),function(x)VCV_Func_ridge(x),mc.cores= 15)
+tmp.ridge<-mclapply(1:nrow(final.CV.ProjA),function(x)VCV_Func_ridge(x),mc.cores= 5)
 Pred2<-lapply(1:length(tmp.ridge),function(x){return(tmp.ridge[[x]]$customPredict(t(final.EXP.sanger)))})
 Pred.Ridge<-do.call("cbind",Pred2)
+colnames(Pred.Ridge)<-rownames(final.CV.ProjA)
+save(tmp.ridge, Pred.Ridge,file = "~/shRNA_database/predictiveModel_Ridge.Rdata")
 
 colnames(Pred.ENet)<-colnames(Pred.Lasso)<-rownames(final.CV.ProjA)
 # save(tmp.lasso,tmp.ridge,tmp.enet, Pred.Lasso,Pred.Ridge, Pred.ENet, file = "~/shRNA_database/predictiveModel.Rdata")
@@ -136,9 +138,13 @@ for(x in 1:length(common.CV.feature)){
   }
 }
   
-hist(COR,50)
+png("~/shRNA_database/Predictive Performance with ENet.png",width = 640, height = 640)
+hist(COR,50,main = "Predictive Performance with Sanger_Colt from CCLE_Archilles ENet model",xlab = "Spearman's rho")
+dev.off()
+
 
 ######### correlation of correlation in order to check how two CVs are related
+name<-coltAnnot$Gene.name
 name.unique<-name[-which(duplicated(name)==1)]
 final.CV.Colt.unique<-final.CV.Colt[-which(duplicated(name)==1),]
 rownames(final.CV.Colt.unique)<-name.unique
@@ -151,4 +157,7 @@ corCV2<-cor(t(CV2),method = "spearman")
 
 CC<-lapply(1:nrow(corCV1),function(x){cor(corCV1[x,],corCV2[x,],method = "spearman")})
 CorCor<-do.call("c",CC)
-hist(CorCor,50)
+
+png("~/shRNA_database/CORCOR_Archilles_Colt.png",width = 640, height = 640)
+hist(CorCor,50,main = "Corcor between Project_Archilles and Colt",xlab = "Spearman's rho")
+dev.off()
