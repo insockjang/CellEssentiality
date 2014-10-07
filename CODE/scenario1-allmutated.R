@@ -38,6 +38,7 @@ for(tiss in tissue.interest){
     return(CC)
   }
 
+  
   library(parallel)
   cc<-mclapply(1:length(name),function(x){tempFun(x)},mc.cores=10)
   CC<-do.call("c",cc)
@@ -71,6 +72,30 @@ for(tiss in tissue.interest){
 
 }
 
+
+
+#run results with cor.test
+tempFunS1pval<-function(k){
+  kk<-match(name[k],rownames(data.input.exp.interest))
+  if(length(kk)>0 & !is.na(kk)){
+    CC<-cor(data.response.target[k,],data.input.exp.interest[kk,],
+            method = "spearman")
+    pval <- cor.test(data.response.target[k,], data.input.exp.interest[kk,],
+                     method="spearman", alternative="two.sided")$p.value
+  }else{
+    CC<-NA
+    pval <- NA
+  }
+  return(c(CC, pval))
+}
+
+library(parallel)
+cc<-mclapply(1:length(name),function(x){tempFunS1pval(x)},mc.cores=10)
+CC<-do.call(rbind,cc)
+colnames(CC) <-c("corr", "pvalue") 
+rownames(CC) <- name
+CC <- data.frame(gene=name,CC)
+CC <- na.omit(CC)
 
 
 save.image("test02-laderas.RData")

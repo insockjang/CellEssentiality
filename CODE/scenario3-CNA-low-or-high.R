@@ -49,6 +49,40 @@ tempUpFun<-function(k){
   return(c(CCwt, CCCGH))
 }
 
+
+tempUpS3pval<-function(k){
+  geneSym <- dataResponseMap[dataResponseMap$response ==k,"gene"]
+  kk<-match(geneSym,rownames(data.input.exp.interest))
+  print(kk)
+  cvk <- match(geneSym, rownames(CGH.up))
+  print(cvk)
+  if(length(kk)>0 & length(cvk)>0 & !is.na(kk) & !is.na(cvk)){
+    up <-names(which(CGH.up[cvk,]==1))
+    print(up)
+  #  wt <- names(which(CGH.up[cvk,]!=1))
+    CCCGH<-cor(data.response.target[k,up],data.input.exp.interest[kk,up],
+               method = "spearman")
+    CCfull <- cor(data.response.target[k,], data.input.exp.interest[kk,], 
+                method="spearman")
+    if(length(up)>2){
+      pvalFull <- cor.test(data.response.target[k,], data.input.exp.interest[kk,], method=
+                             "spearman", alternative="two.sided")$p.value
+      pvalUp <- cor.test(data.response.target[k,up], data.input.exp.interest[kk,up],
+                          method = "spearman", alternative="two.sided")$p.value
+    }
+    else{pvalUp <- NA
+         pvalFull <- NA
+    }
+    
+  }else{
+    CCfull<-NA
+    pvalUp <- NA
+    CCCGH <- NA
+    pvalFull <- NA
+  }
+  return(c(CCfull, pvalFull, CCCGH, pvalUp))
+}
+
 #look at correlation in all down candidates
 tempDownFun<-function(k){
   geneSym <- dataResponseMap[dataResponseMap$response ==k,"gene"]
@@ -62,12 +96,52 @@ tempDownFun<-function(k){
     CCwt <- cor(data.response.target[k,wt], data.input.exp.interest[kk,wt], 
                 method="spearman")
     
+    
   }else{
     CCwt<-NA
     CCCGH <- NA
   }
   return(c(CCwt, CCCGH))
 }
+
+
+
+
+#look at correlation in all down candidates - compare to full correlation
+#
+tempDownS3pval<-function(k){
+  geneSym <- dataResponseMap[dataResponseMap$response ==k,"gene"]
+  kk<-match(geneSym,rownames(data.input.exp.interest))
+  cvk <- match(geneSym, rownames(CGH.down))
+  if(length(kk)>0 & length(cvk)>0){
+    down <-names(which(CGH.down[cvk,]==1))
+    wt <- names(which(CGH.down[cvk,]!=1))
+    CCCGH<-cor(data.response.target[k,down],data.input.exp.interest[kk,down],
+               method = "spearman")
+    CCfull <- cor(data.response.target[k,], data.input.exp.interest[kk,], 
+                method="spearman")
+
+    if(length(down)>2){
+      pvalFull <- cor.test(data.response.target[k,], data.input.exp.interest[kk,], method=
+                             "spearman", alternative="two.sided")$p.value
+      pvalDown <- cor.test(data.response.target[k,up], data.input.exp.interest[kk,up],
+                         method = "spearman", alternative="two.sided")$p.value
+    }
+    else{pvalDown <- NA
+         pvalFull <- NA
+    }
+    
+    
+  }else{
+    CCfull<-NA
+    pvalDown <- NA
+    CCCGH <- NA
+    pvalFull <- NA
+  }
+  return(c(CCfull,pvalFull, CCCGH, pvalDown))
+}
+
+
 
 
 #tissue.interest<-c("LUNG","OVARY","PANCREAS","LARGE")
@@ -104,21 +178,37 @@ tempDownFun<-function(k){
   noCGHdownDR <- as.character(dataResponseMap[dataResponseMap$gene %in% noCGHdown,"response"])
   noCGHupDR <- as.character(dataResponseMap[dataResponseMap$gene %in% noCGHup, "response"])
   
-  ccNoDown <- mclapply(noCGHdownDR, tempUpFun, mc.cores=10)
-  ccNoUp <- mclapply(noCGHupDR, tempDownFun, mc.cores=10)
+  #ccNoDown <- mclapply(noCGHdownDR, tempUpFun, mc.cores=10)
+  #ccNoUp <- mclapply(noCGHupDR, tempDownFun, mc.cores=10)
   
+  ccNoDown <- mclapply(noCGHdownDR, tempUpS3pval, mc.cores=10)
+  ccNoUp <- mclapply(noCGHupDR, tempDownS3pval, mc.cores=10)
+
   CCNoDown <- data.frame(do.call(rbind,ccNoDown))
-  colnames(CCNoDown) <- c("WT","CNA")
+  colnames(CCNoDown) <- c("Full", "pvalFull","CGHup", "pvalUp")
   rownames(CCNoDown) <- noCGHdownDR
   CCNoUp <- data.frame(do.call(rbind,ccNoUp))
-  colnames(CCNoUp) <- c("WT","CNA")
+  colnames(CCNoUp) <- c("Full", "pvalFull", "CGHdown", "pvalDown")
   rownames(CCNoUp) <- noCGHupDR
 
-  CCNoDown <- data.frame(CCNoDown, cordiff = CCNoDown$CNA - CCNoDown$WT)
-  CCNoUp <- data.frame(CCNoUp, cordiff = CCNoUp$CNA - CCNoUp$WT)
+  CCNoDown <- data.frame(CCNoDown, cordiff = CCNoDown$CGHup - CCNoDown$Full)
+  CCNoUp <- data.frame(CCNoUp, cordiff = CCNoUp$CGHdown - CCNoUp$Full)
   
-  CCNoUp[order(abs(CCNoUp$cordiff),decreasing=TRUE),]
-  CCNoDown[order(abs(CCNoDown$cordiff),decreasing=TRUE),][1:50,]
+#  CCNoUp <- CCNoUp[order(abs(CCNoUp$cordiff),decreasing=TRUE),]
+#  CCNoDown <- CCNoDown[order(abs(CCNoDown$cordiff),decreasing=TRUE),]
+
+  CCNoUp <- data.frame(gene=dataResponseMap[rownames(CCNoUp), "gene"],CCNoUp)
+  CCNoDown <-  data.frame(gene=dataResponseMap[rownames(CCNoDown), "gene"],CCNoDown)
+
+CCHalfDown <- na.omit(merge(CCNoUp, CGHframe, by.x="gene", by.y="Gene.Symbol"))
+CCHalfUp <- na.omit(merge(CCNoDown, CGHframe, by.x="gene", by.y="Gene.Symbol"))
+
+CCHalfDown <- CCHalfDown[CCHalfDown$pvalDown < 0.1,]
+CCHalfUp <- CCHalfUp[CCHalfUp$pvalUp < 0.1,]
+
+write.table(CCHalfDown, "Scenario3-half-down-half-wt-pvalue.txt", quote=F, sep="\t", row.name=T)
+write.table(CCHalfUp, "Scenario3-half-up-half-wt.pvalue.txt", quote=F, sep="\t", row.name=T)
+
 #}
 
 
