@@ -6,6 +6,7 @@ B<-read.gct("~/shRNA_database//Project_Achilles/Data//20110303_achilles2_PMAD_ad
 C<-read.delim("~/shRNA_database/Project_Achilles//Data/Achilles_102lines_shRNA_table.txt")
 D<-read.delim("~/shRNA_database/Project_Achilles//Data/Achilles_v2.0_SampleInfo_small.txt.original.txt")
 
+# A1<-read.gct("~/Synthetic_Lethality_Prediction/DATA//Achilles_v2.11_training_phase2 (1).gct")
 # gene symbol in RNAi screen
 name<-sapply(strsplit(rownames(A),"_"),function(x){x[[1]]})
 
@@ -214,3 +215,19 @@ save(correlated.gene,MUT.genes,file ="~/Synthetic_Lethality_Prediction/OV/target
 #         cor(e.HNSCC[a1,b.mut],e.HNSCC[a2,b.mut],method="spearman"),
 #         cor(e.HNSCC[a1,],e.HNSCC[a2,],method="spearman"))
 # }
+
+Bs<-name[which(Pval<=0.01)]
+mat<-matrix(0,nrow = 2, ncol = 2)
+mat[1,1]<-5
+mat[1,2]<-length(setdiff(hits.RNAi,gene))
+mat[2,1]<-length(setdiff(Bs,gene))
+mat[2,2]<-length(union(Bs,hits.RNAi))-mat[2,1]-mat[1,2]+mat[1,1]
+mat[2,2]<-8900-mat[2,1]-mat[1,2]+mat[1,1]
+fisher.test(mat)
+
+library(Vennerable)
+VD<-list("A pair" = Bs, "RNAi Hits" = hits.RNAi)
+Vstem <- Venn(VD)
+png("~/Synthetic_Lethality_Prediction/OV/validation.png",width = 640, height = 640)
+plot(Vstem, doWeights = T, show = list(Universe = FALSE))
+dev.off()

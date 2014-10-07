@@ -177,6 +177,17 @@ hid1<-hid
 hid1[which(hid1!=0)]<-1
 g<-as(hid1,"graphNEL")
 gg<-igraph.from.graphNEL(g) 
+<<<<<<< HEAD
+K<-shortest.paths(gg)
+K[seed.anotherpair.MUT,]
+# row: seed MUT vs. col: apair(candidate)
+I<-apply(K,1,function(x){length(which(x==Inf))})
+i<-which(I>=390)
+KK<-K[-i,-i]
+h<-heatmap(KK,symm=T)
+
+KKK<-KK[h$rowInd,h$rowInd]
+=======
 pathMat <- shortest.paths(gg)
 
 
@@ -202,4 +213,5 @@ for(mut in mutPairsList){
 }
 
 save(hid1,g,gg,pathMat, maxMutPairs,file="network-analysis-ovarian.Rdata")
+>>>>>>> 9f48c6b502a3e6a95dcf57d96ea24d7312b727c4
 ### do further to find P2's synthetic lethality candidate pairs' subset 

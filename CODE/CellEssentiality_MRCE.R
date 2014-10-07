@@ -1,25 +1,14 @@
 #################################################################################################################################
 ##### Cell Essentiality #####
-# Clear Screen
-cat("\014")  
-
-# Clear workspace
-rm(list=ls())
-
-# Set working and library paths
-setwd('/gluster/home/tperumal/Work/Cell Essentiality/')
-.libPaths('/gluster/home/tperumal/mylibs/')
-
 # Load external libraries
 library('CePa')
 library('MRCE')
 library('Biobase')
 library('pracma')
-library('synapseClient')
-synapseLogin()
 
 CellEssentiality_MRCE <- function(
   CANCER_CENSUS = TRUE,
+  SCALE = TRUE,
   METHOD = 'single', #options are single, cv
   
   # options if method is 'single'
@@ -176,31 +165,44 @@ CellEssentiality_MRCE <- function(
   #################################################################################################################################
   
   
+  #################################################################################################################################
+  #### Scale Data ####
+  CCLE_EXPR <- scale(t(CCLE_EXPR))
+  SANGER_EXPR <- scale(t(SANGER_EXPR))
+  ACHILLES_SCORE <- scale(t(ACHILLES_SCORE))
+  COLT_SCORE <- scale(t(COLT_SCORE))
+  #################################################################################################################################
+  
   
   #################################################################################################################################
   #### Sparse multi-variate regression  using MRCE ####  
   if (METHOD == 'single'){
-    MODEL_ACHILLES_CCLE = mrce(t(CCLE_EXPR),t(ACHILLES_SCORE),lam1=L1,lam2=L2,method=METHOD,silent=F)
-    MODEL_COLT_SANGER = mrce(t(SANGER_EXPR),t(COLT_SCORE),lam1=L1,lam2=L2,method=METHOD,silent=F)
+    MODEL_ACHILLES_CCLE = mrce(CCLE_EXPR,ACHILLES_SCORE,lam1=L1,lam2=L2,method=METHOD,silent=F)
+    MODEL_COLT_SANGER = mrce(SANGER_EXPR,COLT_SCORE,lam1=L1,lam2=L2,method=METHOD,silent=F)
   } else if(METHOD == 'cv'){
-    MODEL_ACHILLES_CCLE = mrce(t(CCLE_EXPR),t(ACHILLES_SCORE),lam1.vec=LVEC1,lam2.vec=LVEC2,method=METHOD,silent=F,kfold=10)
-    MODEL_COLT_SANGER = mrce(t(SANGER_EXPR),t(COLT_SCORE),lam1.vec=LVEC1,lam2.vec=LVEC2,method='cv',silent=F,kfold=10)
+    MODEL_ACHILLES_CCLE = mrce(CCLE_EXPR,ACHILLES_SCORE,lam1.vec=LVEC1,lam2.vec=LVEC2,method=METHOD,silent=F,kfold=10)
+    MODEL_COLT_SANGER = mrce(SANGER_EXPR,COLT_SCORE,lam1.vec=LVEC1,lam2.vec=LVEC2,method='cv',silent=F,kfold=10)
   }
+  #################################################################################################################################
+  
   
   #################################################################################################################################
   #### Prediction error calculations ####  
-  PERROR_ACHILLES_CCLE = ACHILLES_SCORE - replicate(dim(ACHILLES_SCORE)[2],MODEL_ACHILLES_CCLE$muhat) - t(MODEL_ACHILLES_CCLE$Bhat) %*% CCLE_EXPR
-  PERROR_COLT_SANGER = COLT_SCORE - replicate(dim(COLT_SCORE)[2],MODEL_COLT_SANGER$muhat) - t(MODEL_COLT_SANGER$Bhat) %*% SANGER_EXPR
+  PERROR_ACHILLES_CCLE = ACHILLES_SCORE + t(- replicate(dim(ACHILLES_SCORE)[1],MODEL_ACHILLES_CCLE$muhat) - t(MODEL_ACHILLES_CCLE$Bhat) %*% t(CCLE_EXPR))
+  PERROR_COLT_SANGER = COLT_SCORE + t(- replicate(dim(COLT_SCORE)[1],MODEL_COLT_SANGER$muhat) - t(MODEL_COLT_SANGER$Bhat) %*% t(SANGER_EXPR))
+    
+  #### Validation error calculations ####  
+  VERROR_ACHILLES_CCLE = ACHILLES_SCORE + t(- replicate(dim(ACHILLES_SCORE)[1],MODEL_COLT_SANGER$muhat) - t(MODEL_COLT_SANGER$Bhat) %*% t(CCLE_EXPR))
+  VERROR_COLT_SANGER = COLT_SCORE + t(- replicate(dim(COLT_SCORE)[1],MODEL_ACHILLES_CCLE$muhat) - t(MODEL_ACHILLES_CCLE$Bhat) %*% t(SANGER_EXPR))
+  #################################################################################################################################
+  
   
   #################################################################################################################################
-  #### Validation error calculations ####  
-  VERROR_ACHILLES_CCLE = ACHILLES_SCORE - replicate(dim(ACHILLES_SCORE)[2],MODEL_COLT_SANGER$muhat) - t(MODEL_COLT_SANGER$Bhat) %*% CCLE_EXPR
-  VERROR_COLT_SANGER = COLT_SCORE - replicate(dim(COLT_SCORE)[2],MODEL_ACHILLES_CCLE$muhat) - t(MODEL_ACHILLES_CCLE$Bhat) %*% SANGER_EXPR
-  
   MODEL <- list(MODEL_ACHILLES_CCLE = MODEL_ACHILLES_CCLE, MODEL_COLT_SANGER = MODEL_COLT_SANGER,
               PERROR_ACHILLES_CCLE = PERROR_ACHILLES_CCLE, PERROR_COLT_SANGER = PERROR_COLT_SANGER,
               VERROR_ACHILLES_CCLE = VERROR_ACHILLES_CCLE, VERROR_COLT_SANGER = VERROR_COLT_SANGER)
   
   save(list='MODEL',file=paste(RESULTS_DIR,FILE_NAME,sep="/"))  
   return(MODEL)
+  ################################################################################################################################# 
 }
