@@ -4,7 +4,7 @@ load(aa@filePath)
 
 # load("~/shRNA_database//Project_Achilles/CCLE-Achilles.RData")
 #concentrate on OVARY tissue first.
-tiss <- "OVARY" # "OVARY", "LARGE", "PANCREAS" (23,15,11) 
+tiss <- "PANCREAS" # "OVARY", "LARGE", "PANCREAS" (23,15,11) 
 a<-which(tissue.sample == tiss)
 
 rownames(data.response)<-name
@@ -102,4 +102,4 @@ for(k in 1:length(S)){
 }
 rownames(HowMany)<-name.apair
 
-save(KK,cc,HowMany,name.apair,file = "~/shRNA_database//Project_Achilles/scenario2.Rdata")
+save(KK,cc,HowMany,name.apair,file = "~/shRNA_database//Project_Achilles/PANCREAS_scenario2.Rdata")

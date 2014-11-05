@@ -67,6 +67,9 @@ source("~/PredictiveModel_pipeline/R5/myEnetModel1.R")
 
 X<-final.EXP.ccle
 
+
+
+
 VCV_Func<-function(x){  
   Y<-final.CV.ProjA[x,]
   bsModel <- myEnetModel1$new()        
@@ -97,7 +100,17 @@ VCV_Func_ridge<-function(x){
   return(bsModel)  
 }
 
+tmp.ridge3<-mclapply(2001:3000,function(x)VCV_Func_ridge(x),mc.cores= 5)
+tmp.ridge4<-mclapply(3001:4000,function(x)VCV_Func_ridge(x),mc.cores= 5)
+tmp.ridge5<-mclapply(4001:5000,function(x)VCV_Func_ridge(x),mc.cores= 5)
+tmp.ridge6<-mclapply(5001:6000,function(x)VCV_Func_ridge(x),mc.cores= 5)
+tmp.ridge7<-mclapply(6001:7000,function(x)VCV_Func_ridge(x),mc.cores= 5)
+tmp.ridge8<-mclapply(7001:8000,function(x)VCV_Func_ridge(x),mc.cores= 5)
+tmp.ridge9<-mclapply(8001:nrow(final.CV.ProjA),function(x)VCV_Func_ridge(x),mc.cores= 5)
+
+
 tmp.ridge<-mclapply(1:nrow(final.CV.ProjA),function(x)VCV_Func_ridge(x),mc.cores= 5)
+
 Pred2<-lapply(1:length(tmp.ridge),function(x){return(tmp.ridge[[x]]$customPredict(t(final.EXP.sanger)))})
 Pred.Ridge<-do.call("cbind",Pred2)
 colnames(Pred.Ridge)<-rownames(final.CV.ProjA)

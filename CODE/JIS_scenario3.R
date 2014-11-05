@@ -5,7 +5,7 @@ load(aa@filePath)
 
 # load("~/shRNA_database//Project_Achilles/CCLE-Achilles.RData")
 #concentrate on OVARY tissue first.
-tiss <- "OVARY" # "OVARY", "LARGE", "PANCREAS" (23,15,11) 
+tiss <- "PANCREAS" # "OVARY", "LARGE", "PANCREAS" (23,15,11) 
 a<-which(tissue.sample == tiss)
 
 rownames(data.response)<-name
@@ -16,12 +16,10 @@ data.input.mut.interest<-data.input.mut[,a]
 data.response.target<-data.response[,a]
 
 
-
+# correlation between exrpession and cell viability
 common.name.exp<-intersect(name,rownames(data.input.exp.interest))
 K<-lapply(1:length(common.name.exp),function(x){kk<-cor.test(data.input.exp.interest[common.name.exp[x],],data.response.target[common.name.exp[x],])
                                                 return(c(kk$estimate,kk$p.value))})
-
-
 KK<-do.call("rbind",K)
 rownames(KK)<-common.name.exp
 colnames(KK)<-c("cor.estimate","cor.p.value")
@@ -88,7 +86,7 @@ for(k in 1:nrow(data.input.copy.interest)){
   D<-data.input.copy.interest[k,]
   d0<-which(D<=1 & D>=-1)
   d1<-which(D> 1)
-  if(length(d0)>5 & length(d1)>5){
+  if(length(d0)>3 & length(d1)>3){
     S.gain<-c(S.gain,k)
   }
   
@@ -96,7 +94,7 @@ for(k in 1:nrow(data.input.copy.interest)){
   d0<-which(D<=1 & D>=-1)
   d2<-which(D< -1)
   
-  if(length(d0)>5 & length(d2)>5){
+  if(length(d0)>3 & length(d2)>3){
     S.loss<-c(S.loss,k)
   }
   
@@ -156,4 +154,4 @@ for(k in 1:length(S.loss)){
 }
 rownames(HowMany.loss)<-name.apair.loss
 
-save(KK,cc.gain,cc.loss,HowMany.gain,HowMany.loss,name.apair.gain,name.apair.loss,file = "~/shRNA_database//Project_Achilles/scenario3.Rdata")
+save(KK,cc.gain,cc.loss,HowMany.gain,HowMany.loss,name.apair.gain,name.apair.loss,file = "~/shRNA_database//Project_Achilles/PANCREAS_scenario3.Rdata")
