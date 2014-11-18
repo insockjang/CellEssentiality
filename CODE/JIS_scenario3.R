@@ -53,6 +53,32 @@ tmpFunGain<-function(k){#} in 1:nrow(data.input.mut.interest)){
     return(NA)
   }  
 }
+
+countGain<-function(k){#} in 1:nrow(data.input.mut.interest)){
+  D<-data.input.copy.interest[k,]
+  d0<-which(D<=1 & D>=-1)
+  d1<-length(which(D>1))
+  return(d1)
+}
+
+countLoss<-function(k){#} in 1:nrow(data.input.mut.interest)){
+  D<-data.input.copy.interest[k,]
+  d0<-which(D<=1 & D>=-1)
+  d1<-length(which(D< -1))
+  return(d1)
+}
+
+
+lossCount <-lapply(1:nrow(data.input.copy.interest),function(x){countLoss(x)})
+names(lossCount)<- rownames(data.input.copy.interest)
+lossCount <- unlist(lossCount)
+lossCount <- data.frame(gene=names(lossCount),lossCount)
+
+gainCount <- lapply(1:nrow(data.input.copy.interest), function(x){countGain(x)})
+names(gainCount)<- rownames(data.input.copy.interest)
+gainCount <- unlist(gainCount)
+gainCount <- data.frame(gene=names(gainCount), gainCount)
+
 tmpFunLoss<-function(k){#} in 1:nrow(data.input.mut.interest)){
   D<-data.input.copy.interest[k,]
   d0<-which(D<=1 & D>=-1)
